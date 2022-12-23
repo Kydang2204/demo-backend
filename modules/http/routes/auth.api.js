@@ -41,4 +41,21 @@ router.post('/sign-up', async (req, res) => {
   }
 })
 
+router.post('/sign-in', async (req, res) => {
+  const { email, password } = req.body
+
+  let result = auth.checkFormatEmail(email)
+  if (!result.valid) {
+    return res.status(400).json(result)
+  }
+
+  result = auth.checkPassword(password)
+
+  if (!result.valid) {
+    return res.status(400).json(result)
+  }
+
+  return res.status(400).json('result')
+})
+
 module.exports = router
