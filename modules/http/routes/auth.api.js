@@ -2,18 +2,8 @@ const express = require('express')
 const bcrypt = require('bcrypt')
 const knex = require('../../../database')
 const jwt = require('jsonwebtoken')
-const cookie = require('cookie')
-const expressjwt = require('express-jwt')
 const auth = require('../helpers/auth.js')
 const router = express.Router()
-
-const cookieOpts = {
-  httpOnly: true,
-  secure: false,
-  domain: 'localhost',
-  path: '/',
-  sameSite: false
-}
 
 router.post('/sign-up', async (req, res) => {
   const { email, password, firstName, lastName } = req.body
@@ -61,7 +51,6 @@ router.post('/sign-in', async (req, res) => {
   }
 
   result = auth.checkPasswordLength(password)
-
   if (!result.valid) {
     return res.status(400).json(result)
   }
@@ -82,12 +71,11 @@ router.post('/sign-in', async (req, res) => {
   await knex('Tokens').insert({
     userId: user.id,
     refreshToken,
-    expiresIn: new Date(Date.now() + 30 * 864e5).toISOString(),
+    expiresIn: "30 days",
     createdAt,
     updatedAt: createdAt
   })
 
-  res.cookie('accessToken', accessToken, cookieOpts)
   return res.status(200).json({
     user: {
       firstName: user.firstName,
@@ -98,6 +86,11 @@ router.post('/sign-in', async (req, res) => {
     accessToken,
     refreshToken
   })
+})
+
+router.post('/sign-out', async (req, res) => {
+  await knex('Tokens').del().where({userId:req.auth.id})
+  return res.status(404).json({ success: true })
 })
 
 module.exports = router
