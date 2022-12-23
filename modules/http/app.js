@@ -12,5 +12,4 @@ app.use('/', expressJwt({
 }).unless({ path: ['/sign-in', '/sign-up'] }))
 
 app.use('/', auth)
-
 app.listen(3001)
