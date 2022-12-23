@@ -1,6 +1,6 @@
 const knex = require('../../../database')
 
-function _checkFormatEmail (email) {
+function _checkEmailFormat (email) {
   const partern = /\S+@\S+\.\S+/
   const valid = partern.test(email)
   if (!valid) {
@@ -12,10 +12,10 @@ function _checkFormatEmail (email) {
   return { valid: true }
 }
 
-module.exports.checkFormatEmail = _checkFormatEmail
+module.exports.checkEmailFormat = _checkEmailFormat
 
 module.exports.checkEmail = async (email) => {
-  const result = _checkFormatEmail(email)
+  const result = _checkEmailFormat(email)
   if (!result.valid) {
     return result
   }
@@ -29,7 +29,7 @@ module.exports.checkEmail = async (email) => {
   return { valid: true }
 }
 
-module.exports.checkPassword = (pw) => {
+module.exports.checkPasswordLength = (pw) => {
   if (!pw || pw.length <= 8 || pw.length >= 20) {
     return {
       valid: false,
