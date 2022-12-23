@@ -17,7 +17,7 @@ router.post('/sign-up', async (req, res) => {
     return res.status(400).json(result)
   }
 
-  const createdAt = new Date().toISOString().replace('Z', '').replace('T', ' ')
+  const createdAt = _now()
   try {
     await knex('Users').insert({
       email: email.toLowerCase(),
@@ -67,11 +67,11 @@ router.post('/sign-in', async (req, res) => {
   const accessToken = jwt.sign({ id: user.id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
   const refreshToken = jwt.sign({ id: user.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' })
 
-  const createdAt = new Date().toISOString().replace('Z', '').replace('T', ' ')
+  const createdAt = _now()
   await knex('Tokens').insert({
     userId: user.id,
     refreshToken,
-    expiresIn: "30 days",
+    expiresIn: '30 days',
     createdAt,
     updatedAt: createdAt
   })
@@ -89,8 +89,43 @@ router.post('/sign-in', async (req, res) => {
 })
 
 router.post('/sign-out', async (req, res) => {
-  await knex('Tokens').del().where({userId:req.auth.id})
+  await knex('Tokens').del().where({ userId: req.auth.id })
   return res.status(404).json({ success: true })
 })
 
+router.post('/refresh-token', async (req, res) => {
+  if (!req.body.refreshToken) {
+    return res.status(404).json({
+      valid: false,
+      reason: 'Refresh token is required'
+    })
+  }
+
+  try {
+    jwt.verify(req.body.refreshToken, process.env.REFRESH_TOKEN_SECRET)
+  } catch (err) {
+    return res.status(404).json({
+      valid: false,
+      reason: 'Refresh token is expired'
+    })
+  }
+
+  const accessToken = jwt.sign({ id: req.auth.id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+  const refreshToken = jwt.sign({ id: req.auth.id }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' })
+
+  const createdAt = _now()
+  await knex('Tokens').insert({
+    userId: req.auth.id,
+    refreshToken,
+    expiresIn: '30 days',
+    createdAt,
+    updatedAt: createdAt
+  })
+  return res.status(200).json({ accessToken, refreshToken })
+})
+
 module.exports = router
+
+function _now () {
+  return new Date().toISOString().replace('Z', '').replace('T', ' ')
+}
